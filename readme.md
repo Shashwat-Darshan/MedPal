@@ -236,6 +236,19 @@ The Clinical Decision Support API provides intelligent analysis of patient data,
 
 ---
 
+## Prerequisites
+
+### 1. Install required libraries
+
+- `@google/generative-ai` for making Gemini API requests: `npm install @google/generative-ai`
+- `dotenv` for loading environment variables: `npm install dotenv`
+
+### 2. Create a Gemini API key
+
+Visit the [Gemini API website](https://gemini.google.com/) to create an API key. Store it securely in a `.env` file with the key `GEMINI_API_KEY`.
+
+---
+
 ## Endpoints
 
 ### 1️⃣ Clinical Decision Support `/cdsHelper`
@@ -413,6 +426,55 @@ const response = await axios.post('http://localhost:3000/api/llm/cdsHelper', {
 
 console.log(response.data);
 ```
+---
+## Making API Requests
+
+### Using JavaScript `using (Axios)`
+>First install the axios library
+```bash
+npm install axios
+```
+### Code
+
+```javascript
+const axios = require('axios');
+
+// Example request to cdsHelper endpoint
+const response1 = await axios.post('http://localhost:3000/api/llm/cdsHelper', {
+  transcript: 'Patient has a history of shortness of breath and fatigue.'
+});
+
+// Example request to clinicalNote endpoint
+const response2 = await axios.post('http://localhost:3000/api/llm/clinicalNote', {
+  transcript: 'The patient is suffering from chronic headaches.',
+  input: 'Please provide possible diagnoses.'
+});
+
+// Example request to cdsHelperddx endpoint
+const response3 = await axios.post('http://localhost:3000/api/llm/cdsHelperddx', {
+  transcript: 'The patient complains of chest pain and dizziness.'
+});
+
+// Example request to cdsHelperQA endpoint
+const response4 = await axios.post('http://localhost:3000/api/llm/cdsHelperQA', {
+  transcript: 'The patient has been experiencing unexplained weight loss.'
+});
+
+// Example request to PatientInstruction endpoint
+const response5 = await axios.post('http://localhost:3000/api/llm/PatientInstruction', {
+  history: 'The patient has a medical history of hypertension and diabetes.',
+  input: 'Provide detailed instructions for managing these conditions.',
+  doc_summary: 'The patient is currently on medication for both hypertension and diabetes.'
+});
+
+console.log(response1.data);
+console.log(response2.data);
+console.log(response3.data);
+console.log(response4.data);
+console.log(response5.data);
+
+```
+
 
 ---
 
