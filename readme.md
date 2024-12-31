@@ -1,15 +1,13 @@
 # Clinical Decision Support API Documentation
 
-## Overview
-This API provides various endpoints for clinical decision support, helping healthcare providers with diagnosis suggestions, patient instructions, and relevant medical questions.
+## Endpoints Overview
 
-## Endpoints
-
-### 1. `/cdsHelper`
-Provides differential diagnoses and suggested questions based on patient symptoms.
+### 1. Clinical Decision Support (`/cdsHelper`)
+Provides comprehensive clinical analysis with differential diagnoses and follow-up questions.
 
 #### Request
 ```json
+POST /cdsHelper
 {
   "transcript": "Patient has a history of shortness of breath and fatigue."
 }
@@ -39,42 +37,108 @@ Provides differential diagnoses and suggested questions based on patient symptom
 }
 ```
 
-### 2. `/clinicalNote`
-Analyzes clinical notes and provides diagnostic suggestions.
+### 2. Clinical Note Analysis (`/clinicalNote`)
+Analyzes clinical notes and provides diagnostic insights.
 
 #### Request
 ```json
+POST /clinicalNote
 {
   "transcript": "The patient is suffering from chronic headaches.",
   "input": "Please provide possible diagnoses."
 }
 ```
 
-### 3. `/cdsHelperddx`
-Focuses specifically on differential diagnosis generation.
+#### Response
+```json
+{
+  "response": {
+    "response": {
+      "Differential Diagnosis": [
+        {
+          "diagnosis": "Tension-Type Headache",
+          "confidence": "75"
+        },
+        {
+          "diagnosis": "Migraine",
+          "confidence": "60"
+        }
+      ],
+      "Questions to Ask": [
+        "When did the headaches start?",
+        "Have you experienced any visual disturbances or nausea?"
+      ]
+    }
+  }
+}
+```
+
+### 3. Differential Diagnosis (`/cdsHelperddx`)
+Generates differential diagnoses based on symptoms.
 
 #### Request
 ```json
+POST /cdsHelperddx
 {
   "transcript": "The patient complains of chest pain and dizziness."
 }
 ```
 
-### 4. `/cdsHelperQA`
-Generates relevant clinical questions based on patient symptoms.
+#### Response
+```json
+{
+  "response": {
+    "response": {
+      "Differential Diagnosis": [
+        {
+          "diagnosis": "Acute Myocardial Infarction",
+          "confidence": "80"
+        },
+        {
+          "diagnosis": "Angina",
+          "confidence": "65"
+        }
+      ],
+      "Questions to Ask": [
+        "Can you describe the pain? Is it sharp or dull?",
+        "Do you have a history of heart disease?"
+      ]
+    }
+  }
+}
+```
+
+### 4. Question Generation (`/cdsHelperQA`)
+Generates relevant clinical questions.
 
 #### Request
 ```json
+POST /cdsHelperQA
 {
   "transcript": "The patient has been experiencing unexplained weight loss."
 }
 ```
 
-### 5. `/PatientInstruction`
-Provides patient care instructions based on medical history and current conditions.
+#### Response
+```json
+{
+  "response": {
+    "response": {
+      "Questions to Ask": [
+        "How much weight have you lost in the past month?",
+        "Are you experiencing any changes in appetite?"
+      ]
+    }
+  }
+}
+```
+
+### 5. Patient Instructions (`/PatientInstruction`)
+Generates detailed patient care instructions.
 
 #### Request
 ```json
+POST /PatientInstruction
 {
   "history": "The patient has a medical history of hypertension and diabetes.",
   "input": "Provide detailed instructions for managing these conditions.",
@@ -82,13 +146,60 @@ Provides patient care instructions based on medical history and current conditio
 }
 ```
 
-## Usage Example
+#### Response
+```json
+{
+  "response": {
+    "response": {
+      "Instructions": [
+        "Monitor your blood pressure regularly and take your prescribed medication.",
+        "Follow a low-sodium diet to help manage hypertension.",
+        "Maintain a balanced diet and monitor blood sugar levels for diabetes management."
+      ]
+    }
+  }
+}
+```
+
+## Making API Requests
+
+### Using JavaScript (Axios)
+
 ```javascript
+const axios = require('axios');
+
+// Example request to cdsHelper endpoint
 const response = await axios.post('http://your-api-endpoint/cdsHelper', {
   transcript: 'Patient has a history of shortness of breath and fatigue.'
 });
-console.log(response.data);
+
+// Example request to clinicalNote endpoint
+const response = await axios.post('http://your-api-endpoint/clinicalNote', {
+  transcript: 'The patient is suffering from chronic headaches.',
+  input: 'Please provide possible diagnoses.'
+});
+
+// Example request to PatientInstruction endpoint
+const response = await axios.post('http://your-api-endpoint/PatientInstruction', {
+  history: 'The patient has a medical history of hypertension and diabetes.',
+  input: 'Provide detailed instructions for managing these conditions.',
+  doc_summary: 'The patient is currently on medication for both hypertension and diabetes.'
+});
 ```
 
-## Response Format
-All endpoints return JSON responses with a nested structure containing either differential diagnoses, questions to ask, patient instructions, or a combination of these elements. Diagnostic suggestions include confidence scores where applicable.
+## Error Handling
+
+The API uses standard HTTP response codes:
+- 200: Success
+- 400: Bad Request
+- 401: Unauthorized
+- 403: Forbidden
+- 500: Internal Server Error
+
+## Authentication
+
+All endpoints require valid authentication headers. Contact the API administrator for credentials.
+
+## Rate Limiting
+
+API requests are subject to rate limiting. Please refer to the API documentation for current limits.
