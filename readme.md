@@ -169,22 +169,39 @@ POST /PatientInstruction
 const axios = require('axios');
 
 // Example request to cdsHelper endpoint
-const response = await axios.post('http://your-api-endpoint/cdsHelper', {
+const response1 = await axios.post('http://localhost:3000/api/llm/cdsHelper', {
   transcript: 'Patient has a history of shortness of breath and fatigue.'
 });
 
 // Example request to clinicalNote endpoint
-const response = await axios.post('http://your-api-endpoint/clinicalNote', {
+const response2 = await axios.post('http://localhost:3000/api/llm/clinicalNote', {
   transcript: 'The patient is suffering from chronic headaches.',
   input: 'Please provide possible diagnoses.'
 });
 
+// Example request to cdsHelperddx endpoint
+const response3 = await axios.post('http://localhost:3000/api/llm/cdsHelperddx', {
+  transcript: 'The patient complains of chest pain and dizziness.'
+});
+
+// Example request to cdsHelperQA endpoint
+const response4 = await axios.post('http://localhost:3000/api/llm/cdsHelperQA', {
+  transcript: 'The patient has been experiencing unexplained weight loss.'
+});
+
 // Example request to PatientInstruction endpoint
-const response = await axios.post('http://your-api-endpoint/PatientInstruction', {
+const response5 = await axios.post('http://localhost:3000/api/llm/PatientInstruction', {
   history: 'The patient has a medical history of hypertension and diabetes.',
   input: 'Provide detailed instructions for managing these conditions.',
   doc_summary: 'The patient is currently on medication for both hypertension and diabetes.'
 });
+
+console.log(response1.data);
+console.log(response2.data);
+console.log(response3.data);
+console.log(response4.data);
+console.log(response5.data);
+
 ```
 
 ## Error Handling
