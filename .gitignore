@@ -1,8 +1,6 @@
 .env
-/node_modules
+Backend/node_modules
+Frontend/node_modules
 trash.js
 /myenv
 trash.py
-a4.png
-image_2970x2100.png
-/frontend
