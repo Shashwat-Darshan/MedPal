@@ -28,6 +28,13 @@ export interface DiagnosisReport {
   status: 'completed' | 'pending';
   finalResults: Disease[];
   questionAnswerPairs: ReportQuestionAnswer[];
+  agentMeta?: {
+    provider?: string;
+    fallbackUsed?: boolean;
+    lowCertainty?: boolean;
+    emergencyFlag?: boolean;
+    tokenOptimized?: boolean;
+  };
 }
 
 export interface SelectedReportContext {

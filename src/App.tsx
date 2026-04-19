@@ -18,6 +18,11 @@ import History from "./pages/History";
 import HealthMonitor from "./pages/HealthMonitor";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Transcript from "./pages/Transcript";
+import TranscriptSetup from "./pages/TranscriptSetup";
+import TranscriptLive from "./pages/TranscriptLive";
+import TranscriptSummary from "./pages/TranscriptSummary";
+import TranscriptDetail from "./pages/TranscriptDetail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -69,6 +74,31 @@ const App = () => (
                   <Route path="/settings" element={
                     <ProtectedRoute>
                       <Settings />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/transcript" element={
+                    <ProtectedRoute>
+                      <Transcript />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/transcript/setup" element={
+                    <ProtectedRoute>
+                      <TranscriptSetup />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/transcript/live" element={
+                    <ProtectedRoute>
+                      <TranscriptLive />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/transcript/summary" element={
+                    <ProtectedRoute>
+                      <TranscriptSummary />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/transcript/:transcriptId" element={
+                    <ProtectedRoute>
+                      <TranscriptDetail />
                     </ProtectedRoute>
                   } />
                   <Route path="*" element={<NotFound />} />

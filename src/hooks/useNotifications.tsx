@@ -26,7 +26,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     {
       id: '1',
       title: 'Welcome to MedPal',
-      message: 'Your AI healthcare assistant is ready to help you.',
+      message: 'Your clinical assessment tools are ready to use.',
       type: 'info',
       timestamp: new Date(),
       read: false
@@ -34,7 +34,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     {
       id: '2',
       title: 'Health Reminder',
-      message: 'Remember to take your daily vitamins.',
+      message: 'Review any new or changing symptoms with a clinician.',
       type: 'warning',
       timestamp: new Date(Date.now() - 3600000),
       read: false

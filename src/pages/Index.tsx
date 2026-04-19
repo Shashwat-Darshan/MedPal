@@ -1,46 +1,48 @@
 
 import React from 'react';
-import { Stethoscope, Brain, Sparkles } from 'lucide-react';
+import { Stethoscope, Brain, Sparkles, ShieldCheck } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import DiagnosticFlow from '@/components/DiagnosticFlow';
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-screen bg-transparent">
       <Navbar />
       
-      <main className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Enhanced Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mb-8 rounded-3xl border border-slate-200/80 bg-white/75 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/70">
+          <div className="mb-4 flex items-center space-x-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-600 to-emerald-500 text-white shadow-sm">
               <Stethoscope className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl lg:text-4xl text-slate-900 dark:text-slate-100">
                 AI Medical Diagnosis
               </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">Get instant health assessment powered by advanced AI</p>
+              <p className="mt-1 text-slate-600 dark:text-slate-300">Structured symptom triage with confidence-based outputs</p>
             </div>
           </div>
           
-          <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
               <span>AI Assistant Online</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Brain className="h-4 w-4 text-purple-500" />
-              <span>Advanced Analysis</span>
+              <Brain className="h-4 w-4 text-cyan-600" />
+              <span>Adaptive Follow-up Questions</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Sparkles className="h-4 w-4 text-yellow-500" />
-              <span>Instant Results</span>
+              <ShieldCheck className="h-4 w-4 text-emerald-600" />
+              <span>Safety-first Guidance</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              <span>Clear Confidence Levels</span>
             </div>
           </div>
         </div>
 
-        {/* Full Width Diagnostic Flow */}
         <DiagnosticFlow />
       </main>
     </div>

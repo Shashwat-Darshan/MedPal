@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 export interface Disease {
   id: string;
   name: string;
+  domain?: string;
   confidence: number;
   description: string;
   symptoms: string[];
@@ -22,6 +23,13 @@ export interface SessionData {
   timestamp?: string;
   finalResults?: Disease[];
   completedAt?: string;
+  agentMeta?: {
+    provider?: string;
+    fallbackUsed?: boolean;
+    lowCertainty?: boolean;
+    emergencyFlag?: boolean;
+    tokenOptimized?: boolean;
+  };
 }
 
 export type DiagnosticStep = 'initial' | 'symptoms' | 'analysis' | 'questions' | 'results';
@@ -134,6 +142,7 @@ export const useDiagnosticFlow = () => {
         ],
         ...(data.finalResults && { finalResults: data.finalResults }),
         ...(data.completedAt && { completedAt: data.completedAt }),
+        ...(data.agentMeta && { agentMeta: data.agentMeta }),
         lastUpdated: new Date().toISOString()
       };
 

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Mic, Send, Brain, Activity, CheckCircle, AlertTriangle, RotateCcw, Stethoscope, Target, Sparkles, Heart, MessageSquare, Shield, Zap, Clock } from 'lucide-react';
 import { useDiagnosticFlow, Disease, DiagnosticQuestion } from '@/hooks/useDiagnosticFlow';
-import { generateDiagnosisFromSymptoms, generateFollowUpQuestion } from '@/services/geminiService';
+import { generateDiagnosisFromSymptoms, generateFollowUpQuestion, getLastDiagnosisAgentMeta } from '@/services/geminiService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserHistory } from '@/hooks/useUserHistory';
@@ -58,10 +58,10 @@ const InitialStep: React.FC<{ onStart: () => void; isProcessing: boolean }> = ({
               
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  AI Health Assistant
+                  Clinical symptom assessment
                 </h1>
                 <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-                  Get instant, personalized health insights powered by advanced medical AI
+                  Provide symptoms for a guided clinical review and next-step suggestions
                 </p>
               </div>
 
@@ -70,19 +70,19 @@ const InitialStep: React.FC<{ onStart: () => void; isProcessing: boolean }> = ({
                   <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl border border-green-200 dark:border-green-700 flex items-center justify-center mx-auto mb-2">
                     <Zap className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
-                  <p className="text-xs text-green-700 dark:text-green-300 font-medium">Instant</p>
+                  <p className="text-xs text-green-700 dark:text-green-300 font-medium">Guided</p>
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl border border-purple-200 dark:border-purple-700 flex items-center justify-center mx-auto mb-2">
                     <Brain className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">AI Powered</p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">Clinical review</p>
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl border border-blue-200 dark:border-blue-700 flex items-center justify-center mx-auto mb-2">
                     <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">Secure</p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">Confidential</p>
                 </div>
               </div>
 
@@ -93,7 +93,7 @@ const InitialStep: React.FC<{ onStart: () => void; isProcessing: boolean }> = ({
               >
                 <div className="flex items-center justify-center gap-2">
                   <Sparkles className="h-5 w-5" />
-                  <span>Start Assessment</span>
+                  <span>Begin assessment</span>
                   <Send className="h-5 w-5" />
                 </div>
               </Button>
@@ -101,15 +101,15 @@ const InitialStep: React.FC<{ onStart: () => void; isProcessing: boolean }> = ({
               <div className="flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  <span>2-3 min</span>
+                  <span>Approx. 2-3 min</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Shield className="h-3 w-3" />
-                  <span>Private</span>
+                  <span>Confidential</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Heart className="h-3 w-3" />
-                  <span>Trusted</span>
+                  <span>Care-focused</span>
                 </div>
               </div>
             </div>
@@ -117,7 +117,7 @@ const InitialStep: React.FC<{ onStart: () => void; isProcessing: boolean }> = ({
 
           <div className="mt-6 text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed px-4">
-              This AI assessment provides educational insights only. Always consult healthcare professionals for medical concerns.
+              This assessment provides informational guidance only. Always consult a healthcare professional for diagnosis or treatment.
             </p>
           </div>
         </div>
@@ -142,7 +142,7 @@ const SymptomsStep: React.FC<{
         {/* Progress Header */}
         <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl p-6 shadow-lg">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Health Assessment</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Clinical assessment</h2>
             <span className="text-sm text-gray-600 dark:text-gray-400">{Math.round(progress)}% Complete</span>
           </div>
           <Progress 
@@ -158,18 +158,18 @@ const SymptomsStep: React.FC<{
               <Activity className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Describe Your Symptoms</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Be as detailed as possible for better assessment</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Describe your symptoms</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Include timing, severity, and any known triggers</p>
             </div>
           </div>
 
           <div className="space-y-6 mt-8">
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tell us about your symptoms</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Symptom details</label>
               <Textarea
                 value={symptoms}
                 onChange={(e) => setSymptoms(e.target.value)}
-                placeholder="Example: I've been experiencing persistent headaches for 3 days, along with fatigue and mild nausea..."
+                placeholder="Example: Headache for 3 days with fatigue and mild nausea..."
                 className="min-h-[120px] bg-white/50 dark:bg-gray-800/50 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-xl resize-none"
                 rows={4}
                 disabled={isProcessing}
@@ -178,7 +178,7 @@ const SymptomsStep: React.FC<{
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Duration</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Symptom duration</label>
                 <select 
                   disabled={isProcessing}
                   className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-400"
@@ -409,7 +409,12 @@ const QuestionsStep: React.FC<{
                     }`}>
                       {index + 1}
                     </div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">{disease.name}</h4>
+                    <div className="flex flex-col">
+                      <h4 className="font-medium text-gray-900 dark:text-white">{disease.name}</h4>
+                      {disease.domain && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{disease.domain}</span>
+                      )}
+                    </div>
                   </div>
                   <Badge className={`px-3 py-1 ${
                     disease.confidence >= 60 ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
@@ -455,7 +460,7 @@ const ResultsStep: React.FC<{
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
               <Target className="h-6 w-6 text-green-600 dark:text-green-400" />
-              <h2 className="text-xl font-semibold text-green-900 dark:text-green-100">Most Likely:</h2>
+              <h2 className="text-xl font-semibold text-green-900 dark:text-green-100">Most Likely Possibility:</h2>
             </div>
             <Badge className="bg-green-600 text-white px-4 py-2">
               {Math.round(topDisease?.confidence || 0)}% Confidence
@@ -464,9 +469,31 @@ const ResultsStep: React.FC<{
           
           <div>
             <h3 className="text-2xl font-bold text-green-900 dark:text-white mb-3">{topDisease?.name}</h3>
+            {topDisease?.domain && (
+              <Badge variant="outline" className="mb-3 border-green-400/60 text-green-800 dark:text-green-200">
+                Domain: {topDisease.domain}
+              </Badge>
+            )}
             <p className="text-green-800 dark:text-green-200 leading-relaxed">{topDisease?.description}</p>
+            <p className="text-green-800/80 dark:text-green-300/80 text-sm mt-3">
+              This is a probabilistic AI estimate based on your inputs, not a medical diagnosis.
+            </p>
           </div>
         </div>
+
+        {(topDisease?.confidence || 0) < 55 && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-2xl p-5">
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-amber-900 dark:text-amber-200 mb-1">Low certainty result</h4>
+                <p className="text-sm text-amber-800 dark:text-amber-300">
+                  Your symptom pattern is not specific yet. For safer guidance, seek clinician review and share your symptom timeline.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Complete Results */}
         <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl p-6 shadow-lg">
@@ -482,7 +509,12 @@ const ResultsStep: React.FC<{
                   }`}>
                     {index + 1}
                   </div>
-                  <span className="font-medium text-gray-900 dark:text-white">{disease.name}</span>
+                  <div className="flex flex-col">
+                    <span className="font-medium text-gray-900 dark:text-white">{disease.name}</span>
+                    {disease.domain && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{disease.domain}</span>
+                    )}
+                  </div>
                 </div>
                 <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
                   {Math.round(disease.confidence)}%
@@ -587,6 +619,7 @@ const DiagnosticFlow = () => {
         status: 'completed' as const,
         finalResults: sortedResults,
         questionAnswerPairs,
+        agentMeta: storedSession.agentMeta,
       };
 
       addDiagnosisReport(report);
@@ -691,14 +724,23 @@ const DiagnosticFlow = () => {
     try {
       console.log('Generating diagnosis from symptoms:', symptoms);
       const diagnosisResults = await generateDiagnosisFromSymptoms(symptoms);
+      const latestAgentMeta = getLastDiagnosisAgentMeta();
       
       const formattedDiseases: Disease[] = diagnosisResults.map((result: any, index: number) => ({
         id: (index + 1).toString(),
         name: result.name,
+        domain: result.domain,
         confidence: result.confidence,
         description: result.description,
         symptoms: result.symptoms || []
       }));
+
+      if (latestAgentMeta) {
+        saveSessionData({
+          agentMeta: latestAgentMeta,
+          timestamp: new Date().toISOString(),
+        });
+      }
 
       console.log('Generated diseases:', formattedDiseases);
       setDiseases(formattedDiseases);

@@ -16,7 +16,7 @@ const Footer = () => {
               <span className="text-lg font-bold text-foreground">MedPal</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Your trusted AI healthcare assistant for symptom analysis and health monitoring.
+              A clinical symptom assessment and monitoring tool for patient guidance.
             </p>
           </div>
 
@@ -24,10 +24,10 @@ const Footer = () => {
           <div>
             <h3 className="text-sm font-semibold text-foreground mb-3">Services</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>AI Diagnosis</li>
-              <li>Health Chat</li>
-              <li>Symptom Tracking</li>
-              <li>Health Monitoring</li>
+              <li>Clinical assessment</li>
+              <li>Health discussion</li>
+              <li>Symptom tracking</li>
+              <li>Health monitoring</li>
             </ul>
           </div>
 
@@ -61,7 +61,7 @@ const Footer = () => {
         <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between">
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
             <Shield className="h-4 w-4" />
-            <span>HIPAA Compliant & Secure</span>
+            <span>Private and secure</span>
           </div>
           <p className="text-sm text-muted-foreground mt-2 sm:mt-0">
             © 2024 MedPal. All rights reserved.

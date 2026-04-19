@@ -49,6 +49,34 @@ interface LoginInput {
 
 let initPromise: Promise<void> | null = null;
 
+type RawAccount = Partial<AuthAccount> & {
+  password?: string;
+};
+
+const getCryptoApi = () => {
+  const candidate = globalThis.crypto;
+  return candidate && typeof candidate === 'object' ? candidate : null;
+};
+
+const randomHex = (byteLength: number) => {
+  const cryptoApi = getCryptoApi();
+
+  if (cryptoApi?.getRandomValues) {
+    const bytes = new Uint8Array(byteLength);
+    cryptoApi.getRandomValues(bytes);
+    return toHex(bytes);
+  }
+
+  let output = '';
+  for (let index = 0; index < byteLength; index += 1) {
+    output += Math.floor(Math.random() * 256)
+      .toString(16)
+      .padStart(2, '0');
+  }
+
+  return output;
+};
+
 const ensureInitialized = async () => {
   if (!initPromise) {
     initPromise = initializeAuthStore();
@@ -58,7 +86,12 @@ const ensureInitialized = async () => {
 };
 
 const initializeAuthStore = async () => {
-  const accounts = readAccounts();
+  const accounts = await normalizeStoredAccounts(readAccounts());
+
+  if (accounts.length > 0) {
+    writeAccounts(accounts);
+  }
+
   const normalizedDemoEmail = normalizeEmail(DEMO_ACCOUNT.email);
   const demoExists = accounts.some((account) => account.email === normalizedDemoEmail);
 
@@ -87,7 +120,7 @@ const readAccounts = (): AuthAccount[] => {
 
   try {
     const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? (parsed as AuthAccount[]) : [];
   } catch {
     return [];
   }
@@ -127,6 +160,66 @@ const clearSession = () => {
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
+const normalizeStoredName = (name: unknown) => {
+  if (typeof name !== 'string') {
+    return 'MedPal User';
+  }
+
+  const trimmed = name.trim();
+  return trimmed || 'MedPal User';
+};
+
+const normalizeStoredAccounts = async (accounts: AuthAccount[]): Promise<AuthAccount[]> => {
+  const rawAccounts = accounts as unknown as RawAccount[];
+  const migrated: AuthAccount[] = [];
+
+  for (const rawAccount of rawAccounts) {
+    if (!rawAccount || typeof rawAccount.email !== 'string') {
+      continue;
+    }
+
+    const normalizedEmail = normalizeEmail(rawAccount.email);
+
+    if (!normalizedEmail) {
+      continue;
+    }
+
+    const id = typeof rawAccount.id === 'string' && rawAccount.id.trim() ? rawAccount.id : generateId();
+    const name = normalizeStoredName(rawAccount.name);
+    const createdAt =
+      typeof rawAccount.createdAt === 'string' && rawAccount.createdAt.trim()
+        ? rawAccount.createdAt
+        : new Date().toISOString();
+
+    let salt = typeof rawAccount.salt === 'string' ? rawAccount.salt : '';
+    let passwordHash = typeof rawAccount.passwordHash === 'string' ? rawAccount.passwordHash : '';
+
+    if ((!salt || !passwordHash) && typeof rawAccount.password === 'string') {
+      salt = generateSalt();
+      passwordHash = await hashPassword(rawAccount.password, salt);
+    }
+
+    if (!salt || !passwordHash) {
+      continue;
+    }
+
+    if (migrated.some((account) => account.email === normalizedEmail)) {
+      continue;
+    }
+
+    migrated.push({
+      id,
+      name,
+      email: normalizedEmail,
+      passwordHash,
+      salt,
+      createdAt,
+    });
+  }
+
+  return migrated;
+};
+
 const generateId = () => {
   if (typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -136,28 +229,38 @@ const generateId = () => {
 };
 
 const generateSalt = () => {
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  return toHex(bytes);
+  return randomHex(16);
 };
 
 const generateToken = () => {
-  if (typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID().replace(/-/g, '');
+  const cryptoApi = getCryptoApi();
+
+  if (cryptoApi && typeof cryptoApi.randomUUID === 'function') {
+    return cryptoApi.randomUUID().replace(/-/g, '');
   }
 
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return toHex(bytes);
+  return randomHex(32);
 };
 
 const toHex = (bytes: Uint8Array) => Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 
 const hashPassword = async (password: string, salt: string) => {
+  const cryptoApi = getCryptoApi();
   const encoder = new TextEncoder();
   const data = encoder.encode(`${salt}:${password}`);
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  return toHex(new Uint8Array(digest));
+
+  if (cryptoApi?.subtle?.digest) {
+    const digest = await cryptoApi.subtle.digest('SHA-256', data);
+    return toHex(new Uint8Array(digest));
+  }
+
+  let hash = 2166136261;
+  for (let index = 0; index < data.length; index += 1) {
+    hash ^= data[index];
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return (hash >>> 0).toString(16).padStart(8, '0');
 };
 
 const createSession = (userId: string): AuthSession => {

@@ -1,4 +1,6 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -93,13 +95,30 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
-    background: rgb(248 251 255);
+    font-family: "Manrope", "Segoe UI", "Helvetica Neue", sans-serif;
+    background:
+      radial-gradient(circle at 12% 16%, rgba(14, 116, 144, 0.1), transparent 28%),
+      radial-gradient(circle at 84% 10%, rgba(16, 185, 129, 0.12), transparent 24%),
+      linear-gradient(180deg, rgb(246 250 255) 0%, rgb(240 248 247) 48%, rgb(244 249 255) 100%);
+    color: rgb(15 23 42);
   }
 
   .dark body {
-    background: rgb(0 0 0);
+    background:
+      radial-gradient(circle at 15% 18%, rgba(20, 184, 166, 0.1), transparent 26%),
+      radial-gradient(circle at 88% 12%, rgba(59, 130, 246, 0.1), transparent 22%),
+      linear-gradient(180deg, rgb(2 6 23) 0%, rgb(3 7 18) 46%, rgb(2 6 23) 100%);
+    color: rgb(241 245 249);
+  }
+
+  h1,
+  h2,
+  h3,
+  .brand-heading {
+    font-family: "Fraunces", Georgia, serif;
+    letter-spacing: -0.02em;
   }
 
   /* Mobile-first responsive typography */

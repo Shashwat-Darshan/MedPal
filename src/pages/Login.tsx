@@ -98,11 +98,11 @@ const Login = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">MedPal</h1>
-              <span className="text-sm text-blue-600">AI Healthcare Assistant</span>
+              <span className="text-sm text-blue-600">Clinical symptom assessment</span>
             </div>
           </div>
           <CardTitle className="text-xl">
-            {isLogin ? 'Welcome Back, User!' : 'Create Account'}
+            {isLogin ? 'Sign in to continue' : 'Create your account'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -178,7 +178,7 @@ const Login = () => {
             )}
 
             <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isSubmitting}>
-              {isSubmitting ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Account'}
+              {isSubmitting ? 'Signing in...' : isLogin ? 'Sign in' : 'Create account'}
             </Button>
           </form>
 
@@ -194,13 +194,13 @@ const Login = () => {
               className="text-blue-600 hover:text-blue-800 text-sm"
             >
               {isLogin 
-                ? "Don't have an account? Sign up" 
-                : "Already have an account? Sign in"
+                ? "Need an account? Register" 
+                : "Already registered? Sign in"
               }
             </button>
           </div>
           <div className="mt-4 text-xs text-gray-500 text-center">
-            Seeded account: test@gmail.com / test
+            Demo account: test@gmail.com / test
           </div>
         </CardContent>
       </Card>
