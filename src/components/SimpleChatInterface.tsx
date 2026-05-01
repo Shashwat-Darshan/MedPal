@@ -14,6 +14,7 @@ import {
   getSelectedDiagnosisReport,
   type DiagnosisReport,
 } from '@/lib/reportStorage';
+import { getLatestCompletedTranscriptSession } from '@/services/transcriptService';
 
 interface Message {
   id: string;
@@ -150,8 +151,76 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ onHistoryCont
       title: 'Report cleared',
       description: 'Chat will use general context until another report is selected.',
     });
-  };
 
+    const buildTranscriptText = (session: any) => {
+      if (!session) return '';
+      const header = `Transcript: ${session.title || 'Live session'} · ${session.when || ''}`;
+      const lines = (session.lines || []).map((l: any) => `[${l.time}] ${l.speaker}: ${l.text}`).join('\n');
+      return `${header}\n\n${lines}`;
+    };
+
+    const attachLatestTranscript = () => {
+      try {
+        const session = getLatestCompletedTranscriptSession();
+        if (!session) {
+          toast({ title: 'No transcript', description: 'No completed transcript session found.' });
+          return;
+        }
+
+        const txt = buildTranscriptText(session);
+        // Insert into input for user to edit before sending
+        setInput((prev) => `${prev}\n
+  };
+        toast({ title: 'Transcript attached', description: 'Latest transcript inserted into the message input.' });
+        inputRef.current?.focus();
+      } catch (err) {
+        console.error('attachLatestTranscript', err);
+        toast({ title: 'Error', description: 'Failed to attach transcript.', variant: 'destructive' });
+      }
+    };
+
+    const attachLatestReport = () => {
+      try {
+        const report = getLatestDiagnosisReport(user?.email) || (activeReport as DiagnosisReport | null);
+        if (!report) {
+          toast({ title: 'No diagnosis', description: 'No diagnosis report available to attach.' });
+          return;
+        }
+
+        const snippet = `Diagnosis summary: ${report.topDiagnosis} (${Math.round(report.confidence)}% confidence)\nSymptoms: ${report.symptoms}`;
+        setInput((prev) => `${prev}\n
+
+        toast({ title: 'Diagnosis attached', description: 'Diagnosis summary inserted into the message input.' });
+        inputRef.current?.focus();
+      } catch (err) {
+        console.error('attachLatestReport', err);
+        toast({ title: 'Error', description: 'Failed to attach diagnosis report.', variant: 'destructive' });
+      }
+    };
+
+    const download = (filename: string, blob: Blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    };
+
+    const exportActiveReport = () => {
+      const report = activeReport || getLatestDiagnosisReport(user?.email);
+      if (!report) {
+        toast({ title: 'No report', description: 'No diagnosis report available to export.' });
+        return;
+      }
+
+      const payload = { meta: { reportId: report.reportId, patient: report.patientEmail, createdAt: report.createdAt }, report };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      download(`${(report.reportId || 'diagnosis')}.json`, blob);
+      toast({ title: 'Export started', description: 'Diagnosis report download started.' });
+    };
   const saveToHistory = (newMessages: Message[]) => {
     try {
       const recentMessages = newMessages.slice(-20); // Keep last 20 messages
@@ -284,6 +353,17 @@ Answer the latest user message with safe health guidance and remind them this is
                 <History className="h-4 w-4" />
                 <span>History</span>
               </Button>
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" onClick={() => attachLatestTranscript()} className="flex items-center space-x-2">
+                  <span>Attach transcript</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => attachLatestReport()} className="flex items-center space-x-2">
+                  <span>Attach diagnosis</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => exportActiveReport()} className="flex items-center space-x-2">
+                  <span>Export report</span>
+                </Button>
+              </div>
               {showHistory && (
                 <Button
                   onClick={clearHistory}
