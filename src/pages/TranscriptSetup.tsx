@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,9 +8,39 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { createNewSession, saveSession, setActiveTranscriptSession } from '@/services/transcriptService';
 
 const TranscriptSetup = () => {
   const navigate = useNavigate();
+  const [patientName, setPatientName] = useState('Alex Morgan');
+  const [doctorName, setDoctorName] = useState('Dr. Priya Patel');
+  const [visitReason, setVisitReason] = useState('Follow-up');
+  const [specialty, setSpecialty] = useState('Endocrinology');
+  const [appointmentType, setAppointmentType] = useState('In-person');
+  const [notes, setNotes] = useState('Routine diabetes follow-up with medication review.');
+  const [consented, setConsented] = useState(true);
+  const visitReasonValue = visitReason === 'Medication review' ? 'med-review' : visitReason === 'New symptoms' ? 'new-symptoms' : 'follow-up';
+  const specialtyValue = specialty === 'General' ? 'general' : specialty === 'Neurology' ? 'neuro' : 'endo';
+  const appointmentTypeValue = appointmentType === 'Telehealth' ? 'telehealth' : appointmentType === 'Phone' ? 'phone' : 'in-person';
+
+  const startLiveTranscript = () => {
+    const session = createNewSession({
+      status: 'live',
+      when: 'Now',
+      title: `${visitReason}: ${specialty}`,
+      specialty,
+      patient: patientName,
+      doctor: doctorName,
+      visitReason,
+      appointmentType,
+      notes,
+      consented,
+    });
+
+    saveSession(session);
+    setActiveTranscriptSession(session.id);
+    navigate('/transcript/live', { state: { sessionId: session.id } });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50/40 to-emerald-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
@@ -46,6 +76,16 @@ const TranscriptSetup = () => {
                 </div>
                 <p className="text-sm text-slate-500">DOB 1989-04-12 · MRN 008421</p>
               </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="patient-name">Patient name</Label>
+                  <Input id="patient-name" value={patientName} onChange={(event) => setPatientName(event.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="doctor-name">Clinician name</Label>
+                  <Input id="doctor-name" value={doctorName} onChange={(event) => setDoctorName(event.target.value)} />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -56,8 +96,8 @@ const TranscriptSetup = () => {
             <CardContent className="space-y-3">
               <div>
                 <Label>Visit reason</Label>
-                <Select defaultValue="follow-up">
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select value={visitReasonValue} onValueChange={(value) => setVisitReason(value === 'med-review' ? 'Medication review' : value === 'new-symptoms' ? 'New symptoms' : 'Follow-up')}>
+                  <SelectTrigger><SelectValue placeholder="Select reason" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="follow-up">Follow-up</SelectItem>
                     <SelectItem value="new-symptoms">New symptoms</SelectItem>
@@ -67,8 +107,8 @@ const TranscriptSetup = () => {
               </div>
               <div>
                 <Label>Specialty</Label>
-                <Select defaultValue="endo">
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select value={specialtyValue} onValueChange={(value) => setSpecialty(value === 'general' ? 'General' : value === 'neuro' ? 'Neurology' : 'Endocrinology')}>
+                  <SelectTrigger><SelectValue placeholder="Select specialty" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="endo">Endocrinology</SelectItem>
                     <SelectItem value="general">General</SelectItem>
@@ -78,8 +118,8 @@ const TranscriptSetup = () => {
               </div>
               <div>
                 <Label>Appointment type</Label>
-                <Select defaultValue="in-person">
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select value={appointmentTypeValue} onValueChange={(value) => setAppointmentType(value === 'telehealth' ? 'Telehealth' : value === 'phone' ? 'Phone' : 'In-person')}>
+                  <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="in-person">In-person</SelectItem>
                     <SelectItem value="telehealth">Telehealth</SelectItem>
@@ -89,7 +129,7 @@ const TranscriptSetup = () => {
               </div>
               <div>
                 <Label>Notes for clinician</Label>
-                <Input placeholder="Anything we should know?" />
+                <Input value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Anything we should know?" />
               </div>
             </CardContent>
           </Card>
@@ -103,7 +143,7 @@ const TranscriptSetup = () => {
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-300">By starting this session, both participants consent to creating a written transcript. Transcripts are encrypted at rest and visible to authorized care team members only.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button variant="outline">I have obtained verbal consent</Button>
+              <Button variant={consented ? 'default' : 'outline'} onClick={() => setConsented((current) => !current)}>I have obtained verbal consent</Button>
               <Button variant="outline">Also retain audio recording (optional)</Button>
             </div>
           </CardContent>
@@ -112,7 +152,7 @@ const TranscriptSetup = () => {
         <div className="mt-4 flex flex-wrap justify-end gap-2">
           <Button variant="outline" onClick={() => navigate('/transcript')}>Cancel</Button>
           <Button variant="outline">Save as draft</Button>
-          <Button className="bg-cyan-600 text-white hover:bg-cyan-700" onClick={() => navigate('/transcript/live')}>Start Live Transcript</Button>
+          <Button className="bg-cyan-600 text-white hover:bg-cyan-700" onClick={startLiveTranscript} disabled={!consented}>Start Live Transcript</Button>
         </div>
       </main>
     </div>

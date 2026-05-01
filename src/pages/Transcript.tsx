@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Activity, Mic, PlayCircle, Search, UserRound, UsersRound, Video } from 'lucide-react';
-import { getAllSessions } from '@/services/mockTranscriptService';
+import { getAllSessions, getActiveTranscriptSession } from '@/services/transcriptService';
 
 const Transcript = () => {
   const navigate = useNavigate();
   const sessions = getAllSessions();
+  const activeSession = getActiveTranscriptSession();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50/40 to-emerald-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
@@ -34,6 +35,14 @@ const Transcript = () => {
                 </Button>
               </div>
             </div>
+
+            {activeSession && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Badge className="bg-cyan-100 text-cyan-800">Active session</Badge>
+                <span className="text-sm text-slate-600 dark:text-slate-300">{activeSession.title} · {activeSession.patient} · {activeSession.status}</span>
+                <Button variant="outline" size="sm" onClick={() => navigate('/transcript/live')}>Resume live session</Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -89,7 +98,18 @@ const Transcript = () => {
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-cyan-300 hover:bg-cyan-50/40 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-cyan-700 dark:hover:bg-slate-800"
               >
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className={session.status === 'draft' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}>{session.status}</Badge>
+                  <Badge
+                    variant="outline"
+                    className={
+                      session.status === 'draft'
+                        ? 'border-amber-200 bg-amber-50 text-amber-700'
+                        : session.status === 'live'
+                          ? 'border-cyan-200 bg-cyan-50 text-cyan-700'
+                          : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    }
+                  >
+                    {session.status}
+                  </Badge>
                   <span className="text-xs text-slate-500">{session.duration}</span>
                 </div>
                 <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{session.title}</h3>

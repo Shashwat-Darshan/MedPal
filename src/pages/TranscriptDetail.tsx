@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Download, Share2 } from 'lucide-react';
-import { getSession } from '@/services/mockTranscriptService';
+import { getSession } from '@/services/transcriptService';
 
 const TranscriptDetail = () => {
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ const TranscriptDetail = () => {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{session?.specialty || 'General'}</p>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Transcript #{transcriptId}</h1>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{session?.title || `Transcript #${transcriptId}`}</h1>
                 <p className="text-sm text-slate-600 dark:text-slate-300">{session?.when} · {session?.duration} · {session?.status}</p>
               </div>
               <div className="flex gap-2">
