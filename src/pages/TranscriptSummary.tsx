@@ -6,11 +6,43 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Download, Share2, Star } from 'lucide-react';
 import { getActiveTranscriptSession, getLatestCompletedTranscriptSession, getTranscriptSummaryFromLines } from '@/services/transcriptService';
+import { saveSession, getSession } from '@/services/transcriptService';
 
 const TranscriptSummary = () => {
   const navigate = useNavigate();
   const session = useMemo(() => getActiveTranscriptSession() || getLatestCompletedTranscriptSession(), []);
   const summary = useMemo(() => (session?.summary ? session.summary : getTranscriptSummaryFromLines(session?.lines || [])), [session]);
+
+  const buildPlainText = (s: typeof session) => {
+    if (!s) return '';
+    const lines = s.lines.map((l) => `[${l.time}] ${l.speaker} (${l.role}): ${l.text}`).join('\n');
+    return [`Session: ${s.title || 'Untitled'}`, `When: ${s.when || 'Unknown'}`, `Doctor: ${s.doctor || ''}`, `Patient: ${s.patient || ''}`, '', '--- Summary ---', `Chief complaint: ${summary.chiefComplaint || ''}`, `Key observations: ${summary.keyObservations || ''}`, `Diagnoses: ${summary.diagnoses || ''}`, `Medications: ${summary.medications || ''}`, `Follow up: ${summary.followUp || ''}`, '', '--- Transcript ---', lines].join('\n\n');
+  };
+
+  const download = (filename: string, blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportJSON = () => {
+    if (!session) return;
+    const payload = { meta: { title: session.title, when: session.when, doctor: session.doctor, patient: session.patient, duration: session.duration }, summary, lines: session.lines };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    download(`${(session.title || 'transcript').replace(/\s+/g, '_')}.json`, blob);
+  };
+
+  const exportText = () => {
+    if (!session) return;
+    const txt = buildPlainText(session);
+    const blob = new Blob([txt], { type: 'text/plain' });
+    download(`${(session.title || 'transcript').replace(/\s+/g, '_')}.txt`, blob);
+  };
 
   const sections = [
     { title: 'Chief complaint', value: summary.chiefComplaint || 'No chief complaint captured yet.' },
@@ -38,7 +70,8 @@ const TranscriptSummary = () => {
                 <p className="text-sm text-slate-600 dark:text-slate-300">Edit, share, and export your structured visit notes.</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export</Button>
+                <Button variant="outline" onClick={() => exportJSON()}><Download className="mr-2 h-4 w-4" /> Export (JSON)</Button>
+                <Button variant="outline" onClick={() => exportText()}>Export (Plain text)</Button>
                 <Button variant="outline" onClick={() => navigate('/history')}><Share2 className="mr-2 h-4 w-4" /> Add to history</Button>
               </div>
             </div>
@@ -68,7 +101,7 @@ const TranscriptSummary = () => {
         </section>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="outline">Export transcript</Button>
+          <Button variant="outline" onClick={() => exportText()}>Export transcript</Button>
           <Button variant="outline">Share with patient</Button>
           <Button variant="outline" onClick={() => navigate('/history')}>Add to history</Button>
           <Button className="bg-cyan-600 text-white hover:bg-cyan-700" onClick={() => navigate('/transcript/setup')}>Start follow-up session</Button>
