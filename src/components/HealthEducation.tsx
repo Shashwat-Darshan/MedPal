@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Clock, Heart, Brain, Apple, Dumbbell } from 'lucide-react';
+import { BookOpen, Clock, Heart, Brain, Apple, Dumbbell, type LucideIcon } from 'lucide-react';
 
 interface Article {
   id: string;
@@ -11,7 +11,7 @@ interface Article {
   category: string;
   readTime: string;
   summary: string;
-  icon: any;
+  icon: LucideIcon;
   featured: boolean;
 }
 

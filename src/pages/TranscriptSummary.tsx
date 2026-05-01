@@ -5,8 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Download, Share2, Star } from 'lucide-react';
-import { getActiveTranscriptSession, getLatestCompletedTranscriptSession, getTranscriptSummaryFromLines } from '@/services/transcriptService';
-import { saveSession, getSession } from '@/services/transcriptService';
+import { clearSelectedDiagnosisReport } from '@/lib/reportStorage';
+import {
+  getActiveTranscriptSession,
+  getLatestCompletedTranscriptSession,
+  getTranscriptSummaryFromLines,
+  selectTranscriptSession,
+} from '@/services/transcriptService';
 
 const TranscriptSummary = () => {
   const navigate = useNavigate();
@@ -44,6 +49,13 @@ const TranscriptSummary = () => {
     download(`${(session.title || 'transcript').replace(/\s+/g, '_')}.txt`, blob);
   };
 
+  const addToChat = () => {
+    if (!session) return;
+    clearSelectedDiagnosisReport();
+    selectTranscriptSession(session.id);
+    navigate('/chat');
+  };
+
   const sections = [
     { title: 'Chief complaint', value: summary.chiefComplaint || 'No chief complaint captured yet.' },
     { title: 'Key observations', value: summary.keyObservations || 'Live transcript is still being collected.' },
@@ -72,6 +84,7 @@ const TranscriptSummary = () => {
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={() => exportJSON()}><Download className="mr-2 h-4 w-4" /> Export (JSON)</Button>
                 <Button variant="outline" onClick={() => exportText()}>Export (Plain text)</Button>
+                <Button variant="outline" onClick={() => addToChat()}>Add to chat</Button>
                 <Button variant="outline" onClick={() => navigate('/history')}><Share2 className="mr-2 h-4 w-4" /> Add to history</Button>
               </div>
             </div>

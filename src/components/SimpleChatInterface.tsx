@@ -12,9 +12,17 @@ import {
   getDiagnosisReport,
   getLatestDiagnosisReport,
   getSelectedDiagnosisReport,
+  selectDiagnosisReport,
   type DiagnosisReport,
 } from '@/lib/reportStorage';
-import { getLatestCompletedTranscriptSession, type TranscriptSession } from '@/services/transcriptService';
+import {
+  clearSelectedTranscriptSession,
+  getLatestCompletedTranscriptSession,
+  getSelectedTranscriptSession,
+  getSession as getTranscriptSession,
+  selectTranscriptSession,
+  type TranscriptSession,
+} from '@/services/transcriptService';
 
 interface Message {
   id: string;
@@ -46,6 +54,8 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ onHistoryCont
   const [chatMode, setChatMode] = useState<ChatMode>('general');
   const [diagnosisContext, setDiagnosisContext] = useState<string>('');
   const [activeReport, setActiveReport] = useState<DiagnosisReport | null>(null);
+  const [activeTranscript, setActiveTranscript] = useState<TranscriptSession | null>(null);
+  const [transcriptContext, setTranscriptContext] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -62,12 +72,27 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ onHistoryCont
     const savedMessages = localStorage.getItem('healthChatHistory');
     if (savedMessages) {
       try {
-        const parsedMessages = JSON.parse(savedMessages);
-        // Convert timestamp strings back to Date objects
-        const messagesWithDates = parsedMessages.map((msg: any) => ({
-          ...msg,
-          timestamp: typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : msg.timestamp
-        }));
+        const parsedMessages: unknown = JSON.parse(savedMessages);
+
+        if (!Array.isArray(parsedMessages)) {
+          return;
+        }
+
+        // Convert timestamp strings back to Date objects (and validate shape)
+        const messagesWithDates: Message[] = parsedMessages
+          .filter((msg): msg is { id: unknown; type: unknown; content: unknown; timestamp: unknown } => {
+            return typeof msg === 'object' && msg !== null;
+          })
+          .map((msg) => {
+            const safe = msg as { id?: unknown; type?: unknown; content?: unknown; timestamp?: unknown };
+            const id = typeof safe.id === 'string' ? safe.id : `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+            const type = safe.type === 'user' || safe.type === 'assistant' ? safe.type : 'user';
+            const content = typeof safe.content === 'string' ? safe.content : '';
+            const timestampValue = safe.timestamp;
+            const timestamp = typeof timestampValue === 'string' ? new Date(timestampValue) : timestampValue instanceof Date ? timestampValue : new Date();
+            return { id, type, content, timestamp };
+          })
+          .filter((msg) => msg.content.trim().length > 0);
         
         // Only load if we have more than just the initial message
         if (messagesWithDates.length > 0) {
@@ -80,6 +105,18 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ onHistoryCont
   }, []);
 
   useEffect(() => {
+    const buildTranscriptContext = (session: TranscriptSession) => {
+      const lines = session.lines.slice(-12).map((line) => `${line.speaker}: ${line.text}`).join('\n');
+      const contextParts = [
+        `Transcript session: ${session.title} (${session.when})`,
+        `Participants: ${session.doctor} and ${session.patient}`,
+        lines ? `Recent transcript lines:\n${lines}` : '',
+      ].filter(Boolean);
+
+      setTranscriptContext(contextParts.join('\n'));
+      setActiveTranscript(session);
+    };
+
     const buildContext = (report: DiagnosisReport) => {
       const topResults = [...report.finalResults]
         .sort((left, right) => right.confidence - left.confidence)
@@ -100,12 +137,27 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ onHistoryCont
       setActiveReport(report);
     };
 
-    // Prefer an explicitly selected report, then fall back to the latest stored report, then the live session snapshot.
+    // Prefer an explicitly selected transcript OR report. Do not mix contexts.
     try {
+      const selectedTranscript = getSelectedTranscriptSession();
+      if (selectedTranscript?.sessionId) {
+        const storedTranscript = getTranscriptSession(selectedTranscript.sessionId);
+        if (storedTranscript) {
+          clearSelectedDiagnosisReport();
+          setDiagnosisContext('');
+          setActiveReport(null);
+          buildTranscriptContext(storedTranscript);
+          return;
+        }
+      }
+
       const selectedReport = getSelectedDiagnosisReport();
       if (selectedReport?.reportId) {
         const storedReport = getDiagnosisReport(selectedReport.reportId);
         if (storedReport) {
+          clearSelectedTranscriptSession();
+          setTranscriptContext('');
+          setActiveTranscript(null);
           buildContext(storedReport);
           return;
         }
@@ -113,6 +165,8 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ onHistoryCont
 
       const latestReport = getLatestDiagnosisReport(user?.email);
       if (latestReport) {
+        setTranscriptContext('');
+        setActiveTranscript(null);
         buildContext(latestReport);
         return;
       }
@@ -136,6 +190,8 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ onHistoryCont
       ].filter(Boolean);
 
       if (summaryParts.length > 0) {
+        setTranscriptContext('');
+        setActiveTranscript(null);
         setDiagnosisContext(summaryParts.join('\n'));
       }
     } catch (error) {
@@ -153,10 +209,14 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ onHistoryCont
     });
   };
 
-  const buildTranscriptText = (session: TranscriptSession) => {
-    const header = `Transcript: ${session.title || 'Live session'} · ${session.when || ''}`;
-    const lines = (session.lines || []).map((line) => `[${line.time}] ${line.speaker}: ${line.text}`).join('\n');
-    return `${header}\n\n${lines}`;
+  const clearTranscriptContext = () => {
+    clearSelectedTranscriptSession();
+    setActiveTranscript(null);
+    setTranscriptContext('');
+    toast({
+      title: 'Transcript cleared',
+      description: 'Chat will use general context until another transcript is selected.',
+    });
   };
 
   const attachLatestTranscript = () => {
@@ -167,9 +227,20 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ onHistoryCont
         return;
       }
 
-      const txt = buildTranscriptText(transcriptSession);
-      setInput((prev) => `${prev}${prev.trim() ? '\n\n' : ''}${txt}`);
-      toast({ title: 'Transcript attached', description: 'Latest transcript inserted into the message input.' });
+      // Behave like History's "Add to Chat": select it as context (do not paste into input).
+      clearSelectedDiagnosisReport();
+      setDiagnosisContext('');
+      setActiveReport(null);
+      selectTranscriptSession(transcriptSession.id);
+      setActiveTranscript(transcriptSession);
+      setTranscriptContext(
+        [
+          `Transcript session: ${transcriptSession.title} (${transcriptSession.when})`,
+          `Participants: ${transcriptSession.doctor} and ${transcriptSession.patient}`,
+          transcriptSession.lines.slice(-12).map((line) => `${line.speaker}: ${line.text}`).join('\n'),
+        ].filter(Boolean).join('\n'),
+      );
+      toast({ title: 'Transcript attached', description: 'Transcript is now used as chat context.' });
       inputRef.current?.focus();
     } catch (err) {
       console.error('attachLatestTranscript', err);
@@ -185,9 +256,19 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ onHistoryCont
         return;
       }
 
-      const snippet = `Diagnosis summary: ${report.topDiagnosis} (${Math.round(report.confidence)}% confidence)\nSymptoms: ${report.symptoms}`;
-      setInput((prev) => `${prev}${prev.trim() ? '\n\n' : ''}${snippet}`);
-      toast({ title: 'Diagnosis attached', description: 'Diagnosis summary inserted into the message input.' });
+      // Behave like History's "Add to Chat": select it as context (do not paste into input).
+      clearSelectedTranscriptSession();
+      setTranscriptContext('');
+      setActiveTranscript(null);
+      selectDiagnosisReport(report.reportId);
+      setDiagnosisContext(
+        [
+          report.symptoms ? `Recent symptoms: ${report.symptoms}` : '',
+          `Most likely diagnosis: ${report.topDiagnosis} (${Math.round(report.confidence || 0)}% confidence)`,
+        ].filter(Boolean).join('\n'),
+      );
+      setActiveReport(report);
+      toast({ title: 'Diagnosis attached', description: 'Diagnosis report is now used as chat context.' });
       inputRef.current?.focus();
     } catch (err) {
       console.error('attachLatestReport', err);
@@ -254,9 +335,11 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ onHistoryCont
             ? 'Respond in a patient-friendly tone: simple, reassuring language with practical next steps.'
             : 'Respond in a balanced health-assistant tone: clear and concise.';
 
-      const diagnosisInstruction = diagnosisContext
-        ? `\nDiagnosis context (${activeReport ? `report ${activeReport.reportId}` : 'session summary'}):\n${diagnosisContext}\n`
-        : '';
+      const contextInstruction = transcriptContext
+        ? `\nTranscript context (selected session):\n${transcriptContext}\n`
+        : diagnosisContext
+          ? `\nDiagnosis context (${activeReport ? `report ${activeReport.reportId}` : 'session summary'}):\n${diagnosisContext}\n`
+          : '';
 
       // Create context from recent messages for better responses
       const recentMessages = newMessages.slice(-6); // Last 6 messages for context
@@ -265,7 +348,7 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ onHistoryCont
         .join('\n');
 
       const contextPrompt = `${modeInstruction}
-${diagnosisInstruction}
+    ${contextInstruction}
 Conversation:
 ${conversationContext}
 
@@ -356,10 +439,10 @@ Answer the latest user message with safe health guidance and remind them this is
               </Button>
               <div className="flex items-center space-x-2">
                 <Button variant="outline" size="sm" onClick={() => attachLatestTranscript()} className="flex items-center space-x-2">
-                  <span>Attach transcript</span>
+                  <span>Add transcript</span>
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => attachLatestReport()} className="flex items-center space-x-2">
-                  <span>Attach diagnosis</span>
+                  <span>Add diagnosis</span>
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => exportActiveReport()} className="flex items-center space-x-2">
                   <span>Export report</span>
@@ -378,21 +461,34 @@ Answer the latest user message with safe health guidance and remind them this is
             </div>
           </div>
 
-          {diagnosisContext && (
+          {(transcriptContext || diagnosisContext) && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="text-xs">
-                {activeReport ? 'Selected report loaded' : 'Diagnosis context loaded'}
-              </Badge>
-              {activeReport && (
-                <Badge variant="secondary" className="text-xs">
-                  {activeReport.topDiagnosis}
-                </Badge>
+              {transcriptContext && (
+                <>
+                  <Badge variant="outline" className="text-xs">Selected transcript loaded</Badge>
+                  {activeTranscript && (
+                    <Badge variant="secondary" className="text-xs">{activeTranscript.title}</Badge>
+                  )}
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={clearTranscriptContext}>
+                    <X className="h-3 w-3 mr-1" />
+                    Clear transcript
+                  </Button>
+                </>
               )}
-              {activeReport && (
-                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={clearReportContext}>
-                  <X className="h-3 w-3 mr-1" />
-                  Clear report
-                </Button>
+
+              {!transcriptContext && diagnosisContext && (
+                <>
+                  <Badge variant="outline" className="text-xs">
+                    {activeReport ? 'Selected report loaded' : 'Diagnosis context loaded'}
+                  </Badge>
+                  {activeReport && (
+                    <Badge variant="secondary" className="text-xs">{activeReport.topDiagnosis}</Badge>
+                  )}
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={clearReportContext}>
+                    <X className="h-3 w-3 mr-1" />
+                    Clear report
+                  </Button>
+                </>
               )}
             </div>
           )}

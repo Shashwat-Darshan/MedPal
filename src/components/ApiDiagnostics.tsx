@@ -19,7 +19,7 @@ interface DiagnosticResult {
   provider: string;
   status: 'success' | 'error' | 'testing';
   error?: string;
-  details?: any;
+  details?: unknown;
   timestamp: Date;
 }
 

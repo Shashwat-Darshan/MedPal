@@ -14,6 +14,7 @@ import {
   type DiagnosisReport,
   type HistoryItem,
 } from '@/lib/reportStorage';
+import { seedExampleDataForUser } from '@/lib/exampleData';
 
 export const useUserHistory = () => {
   const { user } = useAuth();
@@ -26,6 +27,17 @@ export const useUserHistory = () => {
     }
 
     const loadedHistory = loadHistoryItems(user.email);
+
+    // Seed meaningful demo data for first-time users so the app feels “alive”.
+    if (loadedHistory.length === 0) {
+      const seeded = seedExampleDataForUser(user.email, loadedHistory.length);
+      if (seeded) {
+        const reloaded = loadHistoryItems(user.email);
+        setHistory(reloaded);
+        return reloaded;
+      }
+    }
+
     setHistory(loadedHistory);
     return loadedHistory;
   }, [user?.email]);

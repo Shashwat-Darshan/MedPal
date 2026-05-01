@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Download, Share2 } from 'lucide-react';
-import { getSession } from '@/services/transcriptService';
+import { clearSelectedDiagnosisReport } from '@/lib/reportStorage';
+import { getSession, selectTranscriptSession } from '@/services/transcriptService';
 
 const TranscriptDetail = () => {
   const navigate = useNavigate();
@@ -18,6 +19,32 @@ const TranscriptDetail = () => {
   );
   
   const lines = session?.lines || [];
+
+  const download = (filename: string, blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportText = () => {
+    if (!session) return;
+    const header = `Transcript: ${session.title || 'Session'} · ${session.when || ''}`;
+    const body = lines.map((line) => `[${line.time}] ${line.speaker} (${line.role}): ${line.text}`).join('\n');
+    const blob = new Blob([`${header}\n\n${body}`], { type: 'text/plain' });
+    download(`${(session.title || 'transcript').replace(/\s+/g, '_')}.txt`, blob);
+  };
+
+  const addToChat = () => {
+    if (!session) return;
+    clearSelectedDiagnosisReport();
+    selectTranscriptSession(session.id);
+    navigate('/chat');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50/40 to-emerald-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
@@ -37,7 +64,8 @@ const TranscriptDetail = () => {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline"><Share2 className="mr-2 h-4 w-4" /> Share</Button>
-                <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export</Button>
+                <Button variant="outline" onClick={() => exportText()}><Download className="mr-2 h-4 w-4" /> Export</Button>
+                <Button variant="outline" onClick={() => addToChat()}>Add to chat</Button>
                 <Button onClick={() => navigate('/transcript/summary')}>Open summary</Button>
               </div>
             </div>

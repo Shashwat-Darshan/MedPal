@@ -214,7 +214,7 @@ export const chatAboutDiagnosis = async (
         const parsed = JSON.parse(response);
         return parsed.response || parsed.content || response;
       } catch {
-        return response.replace(/[{}"\[\]]/g, '').replace(/response:|content:/g, '').trim();
+        return response.replace(/[[\]{}"]/g, '').replace(/response:|content:/g, '').trim();
       }
     }
     return response;

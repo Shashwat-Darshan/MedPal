@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserHistory } from '@/hooks/useUserHistory';
 import Navbar from '@/components/Navbar';
 import type { DiagnosisReport, HistoryItem } from '@/lib/reportStorage';
+import { clearSelectedTranscriptSession } from '@/services/transcriptService';
 
 const History = () => {
   const navigate = useNavigate();
@@ -79,11 +80,13 @@ const History = () => {
 
       const storedReport = addDiagnosisReport(fallbackReport);
       linkHistoryItemToReport(item.id, storedReport.reportId);
+      clearSelectedTranscriptSession();
       setSelectedReport(storedReport.reportId);
       navigate('/chat');
       return;
     }
 
+    clearSelectedTranscriptSession();
     setSelectedReport(existingReport.reportId);
     navigate('/chat');
   };

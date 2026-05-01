@@ -36,8 +36,14 @@ export interface TranscriptSession {
   endedAt?: string;
 }
 
+export interface SelectedTranscriptContext {
+  sessionId: string;
+  loadedAt: string;
+}
+
 const SESSION_STORAGE_KEY = 'medpal_transcript_sessions_v1';
 const ACTIVE_SESSION_KEY = 'medpal_transcript_active_session_v1';
+const SELECTED_TRANSCRIPT_KEY = 'medpal_selected_transcript_v1';
 
 const emptySummary = (): TranscriptSummary => ({
   chiefComplaint: '',
@@ -291,6 +297,24 @@ export const getActiveTranscriptSession = () => {
 
 export const clearActiveTranscriptSession = () => {
   localStorage.removeItem(ACTIVE_SESSION_KEY);
+  emitTranscriptStorageChange();
+};
+
+export const selectTranscriptSession = (sessionId: string) => {
+  const selection: SelectedTranscriptContext = {
+    sessionId,
+    loadedAt: new Date().toISOString(),
+  };
+
+  writeJson(SELECTED_TRANSCRIPT_KEY, selection);
+  emitTranscriptStorageChange();
+  return selection;
+};
+
+export const getSelectedTranscriptSession = () => readJson<SelectedTranscriptContext | null>(SELECTED_TRANSCRIPT_KEY, null);
+
+export const clearSelectedTranscriptSession = () => {
+  localStorage.removeItem(SELECTED_TRANSCRIPT_KEY);
   emitTranscriptStorageChange();
 };
 

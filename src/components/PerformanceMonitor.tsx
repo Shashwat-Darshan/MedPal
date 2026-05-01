@@ -27,11 +27,18 @@ const PerformanceMonitor = () => {
     const stored = localStorage.getItem('medpal_performance_metrics');
     if (stored) {
       try {
-        const parsed = JSON.parse(stored);
-        setMetrics(parsed.map((m: any) => ({
-          ...m,
-          timestamp: new Date(m.timestamp)
-        })));
+        const parsed: unknown = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const normalized = parsed
+            .filter((m): m is { provider?: unknown; responseTime?: unknown; success?: unknown; timestamp?: unknown } => typeof m === 'object' && m !== null)
+            .map((m) => ({
+              provider: typeof m.provider === 'string' ? m.provider : 'unknown',
+              responseTime: typeof m.responseTime === 'number' ? m.responseTime : 0,
+              success: Boolean(m.success),
+              timestamp: m.timestamp ? new Date(m.timestamp as string) : new Date(),
+            }));
+          setMetrics(normalized.map((m) => ({ ...m, timestamp: new Date(m.timestamp) })));
+        }
       } catch (error) {
         console.error('Error loading performance metrics:', error);
       }

@@ -96,7 +96,7 @@ const DashboardContent = () => {
       return {
         when,
         label: `Diagnostic assessment: ${item.symptoms}`,
-        value: `${Math.round(item.confidence * 100)}% confidence`
+        value: `${Math.round(item.confidence)}% confidence`
       };
     });
   }, [history]);
