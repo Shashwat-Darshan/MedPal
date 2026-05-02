@@ -52,6 +52,28 @@ const History = () => {
     }
   };
 
+  const handleExport = (item: HistoryItem) => {
+    const report = getDiagnosisReportById(item.reportId);
+    const payload = {
+      id: item.id,
+      date: item.date,
+      symptoms: item.symptoms,
+      diagnosis: item.diagnosis,
+      confidence: item.confidence,
+      status: item.status,
+      ...(report && { report }),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `medpal_report_${item.id}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const handleAddToChat = (item: HistoryItem) => {
     const existingReport = item.reportId ? getDiagnosisReportById(item.reportId) : null;
 
@@ -285,7 +307,7 @@ const History = () => {
                             )}
                           </div>
                           <div className="flex space-x-2">
-                            <Button variant="outline" size="sm" className="dark:border-gray-600 dark:text-gray-300">
+                            <Button variant="outline" size="sm" className="dark:border-gray-600 dark:text-gray-300" onClick={() => handleExport(item)}>
                               <FileText className="h-4 w-4 mr-1" />
                               Export
                             </Button>
