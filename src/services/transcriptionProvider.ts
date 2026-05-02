@@ -30,7 +30,7 @@ export async function createProviderSession(provider = 'default'): Promise<Provi
   }
 }
 
-export async function sendAudioChunk(sessionId: string, chunk: Blob): Promise<any> {
+export async function sendAudioChunk(sessionId: string, chunk: Blob): Promise<unknown> {
   try {
     const form = new FormData();
     form.append('audio', chunk, 'chunk.webm');
@@ -52,7 +52,7 @@ export async function sendAudioChunk(sessionId: string, chunk: Blob): Promise<an
   }
 }
 
-export async function finalizeProviderSession(sessionId: string): Promise<any> {
+export async function finalizeProviderSession(sessionId: string): Promise<unknown> {
   try {
     const resp = await fetch(`/api/transcribe/session/${encodeURIComponent(sessionId)}/finalize`, {
       method: 'POST',

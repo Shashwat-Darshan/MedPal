@@ -49,7 +49,7 @@ interface ApiProvider {
   priority: number;
   getApiKey: () => string | null;
   makeRequest: (prompt: string, temperature: number) => Promise<string>;
-  isRateLimited: (error: any) => boolean;
+  isRateLimited: (error: unknown) => boolean;
 }
 
 const GEMINI_MODEL_CANDIDATES = [

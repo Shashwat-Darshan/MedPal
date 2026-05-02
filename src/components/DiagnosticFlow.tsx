@@ -594,7 +594,9 @@ const DiagnosticFlow = () => {
 
       const reportId = `report_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const storedSession = JSON.parse(localStorage.getItem('diagnosisSession') || '{}');
-      const questionAnswerPairs = Array.isArray(storedSession.questionAnswerPairs) ? storedSession.questionAnswerPairs : [];
+        const savedSessionRaw: unknown = JSON.parse(localStorage.getItem('diagnosisSession') || '{}');
+        const savedSession = typeof savedSessionRaw === 'object' && savedSessionRaw !== null ? (savedSessionRaw as any) : {};
+        const questionAnswerPairs = Array.isArray(savedSession.questionAnswerPairs) ? savedSession.questionAnswerPairs : [];
       const nextEntry = addHistoryItem({
         symptoms,
         diagnosis: topResult.name,
@@ -726,14 +728,17 @@ const DiagnosticFlow = () => {
       const diagnosisResults = await generateDiagnosisFromSymptoms(symptoms);
       const latestAgentMeta = getLastDiagnosisAgentMeta();
       
-      const formattedDiseases: Disease[] = diagnosisResults.map((result: any, index: number) => ({
-        id: (index + 1).toString(),
-        name: result.name,
-        domain: result.domain,
-        confidence: result.confidence,
-        description: result.description,
-        symptoms: result.symptoms || []
-      }));
+      const formattedDiseases: Disease[] = diagnosisResults.map((result: unknown, index: number) => {
+        const r = result as { name?: unknown; domain?: unknown; confidence?: unknown; description?: unknown; symptoms?: unknown };
+        return {
+          id: (index + 1).toString(),
+          name: typeof r.name === 'string' ? r.name : `Condition ${index + 1}`,
+          domain: typeof r.domain === 'string' ? r.domain : undefined,
+          confidence: typeof r.confidence === 'number' ? r.confidence : Number(r.confidence) || 0,
+          description: typeof r.description === 'string' ? r.description : '',
+          symptoms: Array.isArray(r.symptoms) ? (r.symptoms as string[]) : [],
+        };
+      });
 
       if (latestAgentMeta) {
         saveSessionData({
